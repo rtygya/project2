@@ -21,11 +21,25 @@ def create_order(oId,sId,cId,Odate,Ddate,Amount):
 def create_customer(cId,Cname,Street,City,StateAb,Zipcode):
     return f"CREATE (:CUSTOMER{{cId: '{cId}', Cname: '{Cname}', Street: '{Street}', City: '{City}', StateAb: '{StateAb}', Zipcode: '{Zipcode}'}})"
 
+def create_store(sID,Sname,Street,City,StateAb,ZipCode,Sdate,Telno,URL):
+    return f"CREATE(:STORE{{sID: '{sID}', Sname: '{Sname}', Street: '{Street}', City: '{City}', StateAb: '{StateAb}', ZipCode: '{ZipCode}', Sdate: '{Sdate}', Telno: '{Telno}', URL: '{URL}'}})"
+
+def create_order_item(oId, iId, Icount):
+    return f"CREATE (:ORDER_ITEM{{oId: '{oId}', iId: '{iId}', Icount: '{Icount}'}})"
+
+def create_oldprice(iId, Sprice, Sdate, Edate):
+    return f"CREATE(:OLDPRICE{{iId: '{iId}', Sprice: '{Sprice}', Sdate: '{Sdate}', Edate: '{Edate}'}})"
+
+def create_employee(sId,SSN,Sname,Street,City,StateAb,Zipcode,Etype,Bdate,Sdate,Edate,Level,Asalary,Agency,Hsalary,Institute,Itype):
+    return f"CREATE(:EMPLOYEE{{sId: '{sId}', SSN: '{SSN}', Sname: '{Sname}', Street: '{Street}', City: '{City}', Bdate: '{Bdate}', StateAb: '{StateAb}', Zipcode: '{Zipcode}', Etype: '{Etype}', Sdate: '{Sdate}', Edate: '{Edate}', Level: '{Level}', Asalary: '{Asalary}', Agency: '{Agency}', Hsalary: '{Hsalary}', Institute: '{Institute}', Itype: '{Itype}'}})"
+
+def create_contract(vId,ctId,Sdate,Ctime,Cname):
+    return f"CREATE(:CONTRACT{{vId: '{vId}', ctId: '{ctId}', Sdate: '{Sdate}', Ctime: '{Ctime}', Cname: '{Cname}'}})"
 
 # Sandbox info (can replace with your own)
 driver = GraphDatabase.driver(
-  "bolt://174.129.159.245:7687",
-  auth=basic_auth("neo4j", "capacities-laser-qualifiers"))
+  "bolt://3.84.30.196:7687",
+  auth=basic_auth("neo4j", "purposes-administrators-washtub"))
 
 with driver.session(database="neo4j") as session:
     # Open each file and create nodes
@@ -65,7 +79,41 @@ with driver.session(database="neo4j") as session:
             query = create_customer(cId,Cname,Street,City,StateAb,Zipcode)
             session.run(query)
             
-                   
+    with open("Sprouts Data/STORE.csv") as store_file:
+        next(store_file)
+        for line in store_file:
+            sID,Sname,Street,City,StateAb,ZipCode,Sdate,Telno,URL = line.strip().split(',')
+            query = create_store(sID,Sname,Street,City,StateAb,ZipCode,Sdate,Telno,URL)
+            session.run(query)   
+
+    with open("Sprouts Data/ORDER_ITEM.csv") as order_item_file:
+        next(order_item_file)
+        for line in order_item_file:
+            oId, iId, Icoun = line.strip().split(',')
+            query = create_order_item(oId, iId, Icoun)
+            session.run(query)     
+
+    with open("Sprouts Data/OLDPRICE.csv") as olderprice_file:
+        next(olderprice_file)
+        for line in olderprice_file:
+            iId, Sprice, Sdate, Edate = line.strip().split(',')
+            query = create_oldprice(iId, Sprice, Sdate, Edate)
+            session.run(query)  
+
+    with open("Sprouts Data/EMPLOYEE.csv") as employee_file:
+        next(employee_file)
+        for line in employee_file:
+            sId,SSN,Sname,Street,City,StateAb,Zipcode,Etype,Bdate,Sdate,Edate,Level,Asalary,Agency,Hsalary,Institute,Itype = line.strip().split(',')
+            query = create_employee(sId,SSN,Sname,Street,City,StateAb,Zipcode,Etype,Bdate,Sdate,Edate,Level,Asalary,Agency,Hsalary,Institute,Itype)
+            session.run(query)
+
+    with open("Sprouts Data/CONTRACT.csv") as contract_file:
+        next(contract_file)
+        for line in contract_file:
+            vId,ctId,Sdate,Ctime,Cname = line.strip().split(',')
+            query = create_contract(vId,ctId,Sdate,Ctime,Cname)
+            session.run(query)
+
     # VENDOR SELLS ITEM 
     sells_query = '''
     MATCH (v:VENDOR), (vi:VENDOR_ITEM), (i:ITEM)
@@ -90,13 +138,28 @@ with driver.session(database="neo4j") as session:
     '''
     session.run(belongsto_query)
     
-    # # ORDER CONTAINS ITEM 
-    # contains_query = '''
-    # MATCH (o:ORDERS), (oi:ORDER_ITEM), (i:ITEM)
-    # WHERE o.oId = oi.oId AND oi.iId = i.iId
-    # MERGE (o)-[:CONTAINS]->(i)
-    # '''
-    # session.run(contains_query)
+    # ORDER CONTAINS ITEM 
+    contains_query = '''
+    MATCH (o:ORDERS), (oi:ORDER_ITEM), (i:ITEM)
+    WHERE o.oId = oi.oId AND oi.iId = i.iId
+    MERGE (o)-[:CONTAINS]->(i)
+    '''
+    session.run(contains_query)
+
+    #order_item MATCHES item
+    matches_query = '''
+    MATCH (oi:ORDER_ITEM), (i:ITEM)
+    WHERE oi.iID = i.iId
+    MERGE (oi)-[:MATCHES]->(i)
+    '''
+    session.run(matches_query)
     
+    #Employee WORKS_AT Store
+    works_query = '''
+    MATCH (e:EMPLOYEE), (s:STORE)
+    WHERE e.sId = s.sId
+    MERGE (e)-[:WORKS_AT]->(s)
+    '''
+    session.run(works_query)
 
 driver.close()
