@@ -7,16 +7,16 @@ from neo4j import GraphDatabase, basic_auth
 
 # Create nodes for each file
 def create_vendor_item(vId, iId, Vprice):
-    return f"CREATE (:VENDOR_ITEM{{iId: '{iId}', vId: '{vId}', Vprice: '{Vprice}'}})"
+    return f"CREATE (:VENDOR_ITEM{{iId: '{iId}', vId: '{vId}', Vprice: {float(Vprice)}}})"
 
 def create_vendor(vId,Vname,Street,City,StateAb,ZipCode):
     return f"CREATE (:VENDOR{{vId: '{vId}', Vname: '{Vname}', Street: '{Street}', City: '{City}', StateAb: '{StateAb}', ZipCode: '{ZipCode}'}})"
 
 def create_item(iId,Iname,Sprice):
-    return f"CREATE (:ITEM{{iId: '{iId}', Iname: '{Iname}', Sprice: '{Sprice}'}})"
+    return f"CREATE (:ITEM{{iId: '{iId}', Iname: '{Iname}', Sprice: {float(Sprice)}}})"
 
 def create_order(oId,sId,cId,Odate,Ddate,Amount):
-    return f"CREATE (:ORDERS{{oId: '{oId}', sId: '{sId}', cId: '{cId}', Odate: '{Odate}', Ddate: '{Ddate}', Amount: '{Amount}'}})"
+    return f"CREATE (:ORDERS{{oId: '{oId}', sId: '{sId}', cId: '{cId}', Odate: '{Odate}', Ddate: '{Ddate}', Amount: {int(Amount)}}})"
 
 def create_customer(cId,Cname,Street,City,StateAb,Zipcode):
     return f"CREATE (:CUSTOMER{{cId: '{cId}', Cname: '{Cname}', Street: '{Street}', City: '{City}', StateAb: '{StateAb}', Zipcode: '{Zipcode}'}})"
@@ -25,21 +25,21 @@ def create_store(sId,Sname,Street,City,StateAb,ZipCode,Sdate,Telno,URL):
     return f"CREATE(:STORE{{sId: '{sId}', Sname: '{Sname}', Street: '{Street}', City: '{City}', StateAb: '{StateAb}', ZipCode: '{ZipCode}', Sdate: '{Sdate}', Telno: '{Telno}', URL: '{URL}'}})"
 
 def create_order_item(oId, iId, Icount):
-    return f"CREATE(:ORDER_ITEM{{oId: '{oId}', iId: '{iId}', Icount: '{Icount}'}})"
+    return f"CREATE(:ORDER_ITEM{{oId: '{oId}', iId: '{iId}', Icount: {int(Icount)}}})"
 
 def create_oldprice(iId, Sprice, Sdate, Edate):
-    return f"CREATE(:OLDPRICE{{iId: '{iId}', Sprice: '{Sprice}', Sdate: '{Sdate}', Edate: '{Edate}'}})"
+    return f"CREATE(:OLDPRICE{{iId: '{iId}', Sprice: {float(Sprice)}, Sdate: '{Sdate}', Edate: '{Edate}'}})"
 
 def create_employee(sId,SSN,Sname,Street,City,StateAb,Zipcode,Etype,Bdate,Sdate,Edate,Level,Asalary,Agency,Hsalary,Institute,Itype):
-    return f"CREATE(:EMPLOYEE{{sId: '{sId}', SSN: '{SSN}', Sname: '{Sname}', Street: '{Street}', City: '{City}', Bdate: '{Bdate}', StateAb: '{StateAb}', Zipcode: '{Zipcode}', Etype: '{Etype}', Sdate: '{Sdate}', Edate: '{Edate}', Level: '{Level}', Asalary: '{Asalary}', Agency: '{Agency}', Hsalary: '{Hsalary}', Institute: '{Institute}', Itype: '{Itype}'}})"
+    return f"CREATE(:EMPLOYEE{{sId: '{sId}', SSN: '{SSN}', Sname: '{Sname}', Street: '{Street}', City: '{City}', Bdate: '{Bdate}', StateAb: '{StateAb}', Zipcode: '{Zipcode}', Etype: '{Etype}', Sdate: '{Sdate}', Edate: '{Edate}', Level: '{Level}', Asalary: '{Asalary}', Agency: '{Agency}', Hsalary: {Hsalary}, Institute: '{Institute}', Itype: '{Itype}'}})"
 
 def create_contract(vId,ctId,Sdate,Ctime,Cname):
     return f"CREATE(:CONTRACT{{vId: '{vId}', ctId: '{ctId}', Sdate: '{Sdate}', Ctime: '{Ctime}', Cname: '{Cname}'}})"
 
 # Sandbox info (can replace with your own)
 driver = GraphDatabase.driver(
-  "bolt://44.201.240.14:7687",
-  auth=basic_auth("neo4j", "striker-groom-mount"))
+  "bolt://54.157.111.155:7687",
+  auth=basic_auth("neo4j", "splitter-throttle-mills"))
 
 with driver.session(database="neo4j") as session:
     # Open each file and create nodes
@@ -162,6 +162,21 @@ with driver.session(database="neo4j") as session:
     MERGE (e)-[:WORKS_AT]->(s)
     '''
     session.run(works_query)
-       
+    
+    #Vendor HAS Contract
+    has_query = '''
+    MATCH (v:VENDOR), (c:CONTRACT)
+    WHERE v.vId = c.vId
+    MERGE (v)-[:HAS]->(c)
+    '''
+    session.run(has_query)
+    
+    #Item HAD Oldprice
+    had_query = '''
+    MATCH (i:ITEM), (op:OLDPRICE)
+    WHERE i.iId = op.iId
+    MERGE (i)-[:HAD]->(op)
+    '''
+    session.run(had_query)  
 
 driver.close()
