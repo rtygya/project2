@@ -36,10 +36,14 @@ def create_employee(sId,SSN,Sname,Street,City,StateAb,Zipcode,Etype,Bdate,Sdate,
 def create_contract(vId,ctId,Sdate,Ctime,Cname):
     return f"CREATE(:CONTRACT{{vId: '{vId}', ctId: '{ctId}', Sdate: '{Sdate}', Ctime: '{Ctime}', Cname: '{Cname}'}})"
 
+# Match query to return all nodes of table
+def match_query(table_name):
+    return f"MATCH (n:{table_name}) RETURN n"
+
 # Sandbox info (can replace with your own)
 driver = GraphDatabase.driver(
-  "bolt://54.157.111.155:7687",
-  auth=basic_auth("neo4j", "splitter-throttle-mills"))
+  "bolt://34.200.249.227:7687",
+  auth=basic_auth("neo4j", "swings-airships-scopes"))
 
 with driver.session(database="neo4j") as session:
     # Open each file and create nodes
@@ -48,7 +52,7 @@ with driver.session(database="neo4j") as session:
         for line in v_file:
             vId,Vname,Street,City,StateAb,ZipCode = line.strip().split(',')
             query = create_vendor(vId,Vname,Street,City,StateAb,ZipCode)
-            # Run query
+            # Run create query
             session.run(query)
             
     with open("Sprouts Data/VENDOR_ITEM.csv") as v_item_file:
@@ -71,7 +75,7 @@ with driver.session(database="neo4j") as session:
             oId,sId,cId,Odate,Ddate,Amount = line.strip().split(',')
             query = create_order(oId,sId,cId,Odate,Ddate,Amount)
             session.run(query)
-    
+     
     with open("Sprouts Data/CUSTOMER.csv") as customer_file:
         next(customer_file)
         for line in customer_file:
@@ -84,14 +88,14 @@ with driver.session(database="neo4j") as session:
         for line in store_file:
             sId,Sname,Street,City,StateAb,ZipCode,Sdate,Telno,URL = line.strip().split(',')
             query = create_store(sId,Sname,Street,City,StateAb,ZipCode,Sdate,Telno,URL)
-            session.run(query)   
+            session.run(query) 
 
     with open("Sprouts Data/ORDER_ITEM.csv") as order_item_file:
         next(order_item_file)
         for line in order_item_file:
             oId, iId, Icount = line.strip().split(',')
             query = create_order_item(oId, iId, Icount)
-            session.run(query)     
+            session.run(query)   
 
     with open("Sprouts Data/OLDPRICE.csv") as olderprice_file:
         next(olderprice_file)
@@ -113,8 +117,78 @@ with driver.session(database="neo4j") as session:
             vId,ctId,Sdate,Ctime,Cname = line.strip().split(',')
             query = create_contract(vId,ctId,Sdate,Ctime,Cname)
             session.run(query)
-
     
+    # Print all VENDOR records
+    print("VENDOR table:")
+    m = match_query('VENDOR')
+    result = session.run(m)
+    for record in result:
+        print(f"vId: {record['n']['vId']}, Vname: {record['n']['Vname']}, Street: {record['n']['Street']}, City: {record['n']['City']}, StateAb: {record['n']['StateAb']}, ZipCode: {record['n']['ZipCode']}")
+        
+    # Print all VENDOR_ITEM records
+    print("VENDOR_ITEM table")
+    m = match_query('VENDOR_ITEM')
+    result = session.run(m)
+    for record in result:
+        print(f"iId: {record['n']['iId']}, vId: {record['n']['vId']}, Vprice: {record['n']['Vprice']}")
+        
+    # Print all ITEM records
+    print("ITEM table")
+    m = match_query('ITEM')
+    result = session.run(m)
+    for record in result:
+        print(f"iId: {record['n']['iId']}, Iname: {record['n']['Iname']}, Sprice: {record['n']['Sprice']}")   
+        
+    # Print all ORDERS records
+    print("ORDERS table")
+    m = match_query('ORDERS')
+    result = session.run(m)
+    for record in result:
+        print(f"oId: {record['n']['oId']}, sId: {record['n']['sId']}, cId: {record['n']['cId']}, Odate: {record['n']['Odate']}, Ddate: {record['n']['Ddate']}, Amount: {record['n']['Amount']}")
+        
+    # Print all CUSTOMER records
+    print("CUSTOMER table")
+    m = match_query('CUSTOMER')
+    result = session.run(m)
+    for record in result:
+        print(f"cId: {record['n']['cId']}, Cname: {record['n']['Cname']}, Street: {record['n']['Street']}, City: {record['n']['City']}, StateAb: {record['n']['StateAb']}, Zipcode: {record['n']['Zipcode']}")
+        
+    # Print all STORE records
+    print("STORE table")
+    m = match_query('STORE')
+    result = session.run(m)
+    for record in result:
+        print(f"sId: '{record['n']['sId']}', Sname: '{record['n']['Sname']}', Street: '{record['n']['Street']}', City: '{record['n']['City']}', StateAb: '{record['n']['StateAb']}', ZipCode: '{record['n']['ZipCode']}', Sdate: '{record['n']['Sdate']}', Telno: '{record['n']['Telno']}', URL: '{record['n']['URL']}'")
+    
+    # Print all ORDER_ITEM records
+    print("ORDER_ITEM table")
+    m = match_query('ORDER_ITEM')
+    result = session.run(m)
+    for record in result:
+        print(f"oId: '{record['n']['oId']}', iId: '{record['n']['iId']}', Icount: {record['n']['Icount']}")  
+        
+    # Print all OLDPRICE records
+    print("OLDPRICE table")
+    m = match_query('OLDPRICE')
+    result = session.run(m)
+    for record in result:
+        print(f"iId: '{record['n']['iId']}', Sprice: {record['n']['Sprice']}, Sdate: '{record['n']['Sdate']}', Edate: '{record['n']['Edate']}'")
+        
+    # Print all EMPLOYEE records
+    print("EMPLOYEE table")
+    m = match_query('EMPLOYEE')
+    result = session.run(m)
+    for record in result:
+        print(f"sId: '{record['n']['sId']}', SSN: '{record['n']['SSN']}', Sname: '{record['n']['Sname']}', Street: '{record['n']['Street']}', City: '{record['n']['City']}', Bdate: '{record['n']['Bdate']}', StateAb: '{record['n']['StateAb']}', Zipcode: '{record['n']['Zipcode']}', Etype: '{record['n']['Etype']}', Sdate: '{record['n']['Sdate']}', Edate: '{record['n']['Edate']}', Level: '{record['n']['Level']}', Asalary: '{record['n']['Asalary']}', Agency: '{record['n']['Agency']}', Hsalary: {record['n']['Hsalary']}, Institute: '{record['n']['Institute']}', Itype: '{record['n']['Itype']}'")
+    
+    # Print all CONTRACT records
+    print("CONTRACT table")
+    m = match_query('CONTRACT')
+    result = session.run(m)
+    for record in result:
+        print(f"vId: '{record['n']['vId']}', ctId: '{record['n']['ctId']}', Sdate: '{record['n']['Sdate']}', Ctime: '{record['n']['Ctime']}', Cname: '{record['n']['Cname']}'")
+
+   
     # VENDOR SELLS ITEM 
     sells_query = '''
     MATCH (v:VENDOR), (vi:VENDOR_ITEM), (i:ITEM)
